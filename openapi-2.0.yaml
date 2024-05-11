@@ -1,0 +1,61 @@
+swagger: '2.0'
+info:
+  title: Swagger Lanchonete - OpenAPI 2.0
+  description: >-
+    Este é um exemplo de uma aplicação para gerenciamento de pedidos de uma
+    lanchonete utilizando os conceitos de Clean Architecture.
+  contact:
+    email: devairft@gmail.com
+  version: 1.0.11
+tags:
+  - name: Users
+    description: Everything about users
+security:
+  - apiKey: []
+paths:
+  /api/v1/auth:
+    post:
+      tags:
+        - Users
+      description: Create a new category
+      operationId: addUser
+      x-google-backend: 
+        address: "https://us-central1-k8s-fiap.cloudfunctions.net/auth-user"        
+      parameters:
+        - in: body
+          name: user         
+          schema:
+            type: object
+            required:
+              - email
+              - password
+              - cpf
+            properties:
+              cpf:
+                type: string
+                example: 12345678900
+              email:
+                type: string
+                example: email
+              password:
+                type: string
+                example: password
+      responses:
+        '200':
+          description: Successful operation
+          schema:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+        '400':
+          description: Bad request
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '500':
+          description: Server error
+    

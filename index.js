@@ -5,53 +5,67 @@
  * @param {!express:Response} res HTTP response context.
  */
 
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 
 admin.initializeApp();
 
-const APP_ENDPOINT = process.env.APP_ENDPOINT || 'https://localhost'
+const APP_ENDPOINT = process.env.APP_ENDPOINT || "https://localhost";
 
 exports.authUser = async (req, res) => {
+    const contentType = req.headers["content-type"];
 
-  if (req.method == "POST") {
-      const { cpf, email, password, name } = req.body;      
-      let userRecord;
-      try{
-        userRecord = await admin.auth().getUserByEmail(email);
-        return res.status(200).json({ data: userRecord });
-      }
-      catch ( err ) 
-      { console.error( err ); }
-      
-      userRecord = await admin.auth().createUser({        
-        email: email,
-        password: password        
-      });
+    if (!contentType) {
+        return res.status(403).send({ message: "Content-Type is missing" });
+    }
 
-      res.status(200).json({ data: userRecord });
+    if (contentType !== "application/json") {
+        return res
+            .status(403)
+            .send({ message: "Content-Type must be application/json" });
+    }
 
-    /*
+    if (req.method == "POST") {
+        const { name, cpf, email, phone, password } = req.body;
+        let userRecord;
+        try {
+            userRecord = await admin.auth().getUserByEmail(email);
+            return res.status(200).json({ data: userRecord });
+        } catch (err) {
+            console.error(err); // o método retornar uma exception quando nao encontra o e-mail
+        }
 
-    if (validarCPF(cpf) && clienteAutorizado(cpf)) {
-      return res.status(200).send("Cliente autenticado com sucesso!");
+        try {
+            userRecord = await admin.auth().createUser({
+                email: email,
+                password: password,
+            });
+        } catch (err) {
+            return res.status(403).send({ message: err.message });
+        }
+
+        if (userRecord) {
+            try {
+                const response = await fetch(APP_ENDPOINT + '/customers', {
+                    method: "post",
+                    body: JSON.stringify({
+                        email,
+                        phone,
+                        cpf,
+                        name,
+                        firebaseid: userRecord.uid,
+                    }),
+                    headers: {'Content-Type': 'application/json'}
+                });
+
+                return res.status(response.status).json(response.body);
+            } catch (err) {
+                return res.status(403).send({ message: err });
+            }
+        }
     } else {
-      return res.status(403).send("Acesso não autorizado");
-    }*/
-  } else {
-    res.status(403).send({ message: `Method not ${req.method} allowed` });
-  }
+        return res
+            .status(403)
+            .send({ message: `Method not ${req.method} allowed` });
+    }
 };
-
-// Função para validar o formato do CPF
-function validarCPF(cpf) {
-  if (!cpf) {
-    return false;
-  }
-  return true;
-}
-
-// Função para verificar se o cliente está autorizado
-function clienteAutorizado(cpf) {
-  return true;
-}
