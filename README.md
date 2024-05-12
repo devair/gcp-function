@@ -13,6 +13,7 @@ gcloud functions deploy auth-user \
   --source=. \
   --entry-point=authUser \
   --trigger-http \
-  --allow-unauthenticated
+  --allow-unauthenticated \
+  --set-env-vars APP_ENDPOINT=<APP_BASEURL>
 
   ~~~bash
